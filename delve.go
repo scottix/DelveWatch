@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strconv"
+	"sync"
+	"time"
 )
 
 var delveCmd *exec.Cmd
@@ -62,10 +65,12 @@ func DelveStart() error {
 }
 
 // DelveRun main loop to watch devlve
-func DelveRun() {
+func DelveRun(wg *sync.WaitGroup) {
 	if trace == true {
 		fmt.Println("[DelveWatch:DelveRun] Start")
 	}
+	defer wg.Done()
+
 	pipeOut := make(chan io.ReadCloser)
 	listener = make(chan string)
 	command := ""
@@ -95,6 +100,13 @@ func DelveRun() {
 		}
 
 		DelveStop()
+
+		if dlvStopTime > 0 {
+			if verbose == true {
+				fmt.Println("[DelveWatch] Sleeping " + strconv.Itoa(dlvStopTime) + " second(s)")
+			}
+			time.Sleep(time.Duration(dlvStopTime) * time.Second)
+		}
 	}
 
 	if trace == true {
